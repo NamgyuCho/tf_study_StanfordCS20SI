@@ -78,11 +78,15 @@ def read_data_sets(filename):
             tmp1 = [float(i) for i in tmp]
             len_line = len(tmp1)
             X.append(tmp1[:-2])
-            Y.append(tmp1[-1])
+            Y.append(int(tmp1[-1]))
     X = np.array(X)
     Y = np.array(Y)
     num_example = len(Y)
-    Y = np.reshape(Y, (num_example, 1))
+
+    # empty one-hot matrix and set target idx to 1
+    ohm = np.zeros((num_example, len(set(Y))))
+    ohm[np.arange(num_example), Y] = 1
+    Y = ohm
 
     """Set the images and labels."""
     num_training = int(num_example*0.45)
