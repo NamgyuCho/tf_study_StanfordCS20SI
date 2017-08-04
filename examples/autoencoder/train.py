@@ -7,12 +7,12 @@ batch_size = 100
 batch_shape = (batch_size, 28, 28, 1)
 num_visualize = 10
 
-lr = 0.01
+lr = 0.001
 num_epochs = 50
 
 def calculate_loss(original, reconstructed):
-    return tf.div(tf.reduce_sum(tf.square(tf.sub(reconstructed,
-                                                 original))), 
+    return tf.div(tf.reduce_sum(tf.square(tf.subtract(reconstructed,
+                                                      original))),
                   tf.constant(float(batch_size)))
 
 def train(dataset):

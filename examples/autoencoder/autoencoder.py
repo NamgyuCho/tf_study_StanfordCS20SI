@@ -63,7 +63,7 @@ def decoder(input):
 
     # Deconv 1: filter: [3, 3, 8], stride: [2, 2], relu
     with tf.variable_scope('deconv1') as scope:
-        output_shape = get_deconv2d_output_dims([-1, 4, 4, 8], [3, 3, 8], [2, 2], padding='SAME')
+        output_shape = get_deconv2d_output_dims([fc.get_shape()[0].value, 4, 4, 8], [3, 3, 8], [2, 2], padding='SAME')
         kernels = tf.get_variable('weights', [3, 3, 8, 8],
                                   initializer=tf.truncated_normal_initializer())
         biases = tf.get_variable('biases', [8],
@@ -74,8 +74,8 @@ def decoder(input):
     
     # Deconv 2: filter: [8, 8, 1], stride: [2, 2], padding: valid, relu
     with tf.variable_scope('deconv2') as scope:
-        output_shape = get_deconv2d_output_dims(deconv1.get_shape(), [8, 8, 1], [2, 2], padding='VALID')
-        kernels = tf.get_variable('weights', [8, 8, 8, 1],
+        output_shape = get_deconv2d_output_dims(output_shape, [8, 8, 1], [2, 2], padding='VALID')
+        kernels = tf.get_variable('weights', [8, 8, 1, 8],
                                   initializer=tf.truncated_normal_initializer())
         biases = tf.get_variable('biases', [1],
                                  initializer=tf.random_normal_initializer())
@@ -85,7 +85,7 @@ def decoder(input):
     
     # Deconv 3: filter: [7, 7, 1], stride: [1, 1], padding: valid, sigmoid
     with tf.variable_scope('deconv3') as scope:
-        output_shape = get_deconv2d_output_dims(deconv2.get_shape(), [7, 7, 1], [2, 2], padding='VALID')
+        output_shape = get_deconv2d_output_dims(output_shape, [7, 7, 1], [1, 1], padding='VALID')
         kernels = tf.get_variable('weights', [7, 7, 1, 1],
                                   initializer=tf.truncated_normal_initializer())
         biasis = tf.get_variable('biases', [1],

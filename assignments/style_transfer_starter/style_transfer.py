@@ -1,5 +1,4 @@
-""" An implementation of the paper "A Neural Algorithm of Artistic Style"
-by Gatys et al. in TensorFlow.
+""" An implementation of the paper "A Neural Algorithm of Artistic Style" by Gatys et al. in TensorFlow.
 
 Author: Chip Huyen (huyenn@stanford.edu)
 Prepared for the class CS 20SI: "TensorFlow for Deep Learning Research"
@@ -65,13 +64,21 @@ def _create_content_loss(p, f):
         the content loss
 
     """
-    pass
+    _, height, width, channel = p.shape
+    const_norm = height * width * channel
+
+    loss = tf.reduce_sum((p - f) ** 2) / (4 * const_norm)
+
+    return loss
+
 
 def _gram_matrix(F, N, M):
     """ Create and return the gram matrix for tensor F
         Hint: you'll first have to reshape F
     """
-    pass
+    F = tf.reshape(F, (M, N))
+    return tf.matmul(tf.transpose(F), F)
+
 
 def _single_style_loss(a, g):
     """ Calculate the style loss at a certain layer
@@ -85,7 +92,12 @@ def _single_style_loss(a, g):
         2. we'll use the same coefficient for style loss as in the paper
         3. a and g are feature representation, not gram matrices
     """
-    pass
+    N = a.shape[3]
+    M = a.shape[1] * a.shape[2]
+    A = _gram_matrix(a, N, M)
+    G = _gram_matrix(g, N, M)
+    return tf.reduce_sum((G - A) ** 2 / ((2 * N * M) ** 2))
+
 
 def _create_style_loss(A, model):
     """ Return the total style loss
@@ -95,8 +107,9 @@ def _create_style_loss(A, model):
     
     ###############################
     ## TO DO: return total style loss
-    pass
+    return sum([W[i] * E[i] for i in range(n_layers)])
     ###############################
+
 
 def _create_losses(model, input_image, content_image, style_image):
     with tf.variable_scope('loss') as scope:
@@ -113,6 +126,9 @@ def _create_losses(model, input_image, content_image, style_image):
         ##########################################
         ## TO DO: create total loss. 
         ## Hint: don't forget the content loss and style loss weights
+        alpha = 0.01
+        beta = alpha * 1
+        total_loss = alpha * content_loss + beta * style_loss
         
         ##########################################
 
@@ -122,7 +138,15 @@ def _create_summary(model):
     """ Create summary ops necessary
         Hint: don't forget to merge them
     """
-    pass
+    with tf.name_scope('summaries'):
+        tf.summary.scalar('content loss', model['content_loss'])
+        tf.summary.scalar('style loss', model['style_loss'])
+        tf.summary.scalar('total loss', model['total_loss'])
+        tf.summary.histogram('histogram content loss', model['content_loss'])
+        tf.summary.histogram('histogram style loss', model['style_loss'])
+        tf.summary.histogram('histogram total loss', model['total_loss'])
+        return tf.summary.merge_all()
+
 
 def train(model, generated_image, initial_image):
     """ Train your model.
@@ -135,13 +159,17 @@ def train(model, generated_image, initial_image):
         ## TO DO: 
         ## 1. initialize your variables
         ## 2. create writer to write your graph
+        saver = tf.train.Saver()
+        sess.run(tf.global_variables_initializer())
+        writer = tf.summary.FileWriter('./graph/style_transfer', sess.graph)
         ###############################
+
         sess.run(generated_image.assign(initial_image))
         ckpt = tf.train.get_checkpoint_state(os.path.dirname('checkpoints/checkpoint'))
         if ckpt and ckpt.model_checkpoint_path:
             saver.restore(sess, ckpt.model_checkpoint_path)
         initial_step = model['global_step'].eval()
-        
+
         start_time = time.time()
         for index in range(initial_step, ITERS):
             if index >= 5 and index < 20:
@@ -153,6 +181,9 @@ def train(model, generated_image, initial_image):
             if (index + 1) % skip_step == 0:
                 ###############################
                 ## TO DO: obtain generated image and loss
+                gen_image, total_loss, summary = sess.run([generated_image,
+                                                           model['total_loss'],
+                                                           model['summary_op']])
 
                 ###############################
                 gen_image = gen_image + MEAN_PIXELS
@@ -189,7 +220,8 @@ def main():
                                                     input_image, content_image, style_image)
     ###############################
     ## TO DO: create optimizer
-    ## model['optimizer'] = ...
+    model['optimizer'] = tf.train.AdamOptimizer(LR).minimize(model['total_loss'],
+                                                             global_step=model['global_step'])
     ###############################
     model['summary_op'] = _create_summary(model)
 

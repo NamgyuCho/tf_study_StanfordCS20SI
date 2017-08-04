@@ -15,6 +15,8 @@ import numpy as np
 import PIL.Image
 
 import tensorflow as tf
+from tensorflow.python.platform import gfile
+from six.moves import urllib
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -50,8 +52,19 @@ def maybe_download(data_dir):
   url = ('https://storage.googleapis.com/download.tensorflow.org/models/'
          'inception5h.zip')
   basename = 'inception5h.zip'
-  local_file = tf.contrib.learn.python.learn.datasets.base.maybe_download(
-      basename, data_dir, url)
+
+  if not gfile.Exists(data_dir):
+    gfile.MakeDirs(data_dir)
+  filepath = os.path.join(data_dir, basename)
+  if not gfile.Exists(basename):
+    temp_file_name, _ = urllib.request.urlretrieve(url)
+    gfile.Copy(temp_file_name, filepath)
+    with gfile.GFile(filepath) as f:
+      size = f.size()
+    print('Successfully downloaded', basename, size, 'bytes.')
+  local_file = filepath
+
+  #local_file = tf.contrib.learn.python.learn.datasets.base.maybe_download( basename, data_dir, url)
 
   # Uncompress the pretrained Inception network.
   print('Extracting', local_file)
